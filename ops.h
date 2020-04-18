@@ -6,17 +6,17 @@
 namespace KFM
 {
 
-    void sigmoid_op(Eigen::Vector<double, Eigen::Dynamic> const& x, Eigen::Vector<double, Eigen::Dynamic>& y)
+    void sigmoid_op(Eigen::VectorXd const& x, Eigen::VectorXd& y)
     {
         y = (1.0 + (-x).array().exp()).inverse().matrix();
     }
 
-    void sigmoid_grad(Eigen::Vector<double, Eigen::Dynamic> const& x, Eigen::Vector<double, Eigen::Dynamic>& grad)
+    void sigmoid_grad(Eigen::VectorXd const& x, Eigen::VectorXd& grad)
     {
         grad = (x.array() * (1 - x.array())).matrix();
     }
 
-    double logloss_op(Eigen::Vector<double, Eigen::Dynamic> const& y, Eigen::Vector<double, Eigen::Dynamic> const& yhat)
+    double logloss_op(Eigen::VectorXd const& y, Eigen::VectorXd const& yhat)
     {
         auto y_arr = y.array();
         auto yhat_arr = yhat.array();
@@ -24,7 +24,7 @@ namespace KFM
         return loss.sum();
     }
 
-    void logloss_grad(Eigen::Vector<double, Eigen::Dynamic> const& y, Eigen::Vector<double, Eigen::Dynamic> const& yhat, Eigen::Vector<double, Eigen::Dynamic>& grad)
+    void logloss_grad(Eigen::VectorXd const& y, Eigen::VectorXd const& yhat, Eigen::VectorXd& grad)
     {
         auto y_arr = y.array();
         auto yhat_arr = yhat.array();
@@ -32,7 +32,7 @@ namespace KFM
         grad = (y_arr/yhat_arr - (y_arr - 1)/(1 - yhat_arr)).matrix();
     }
 
-    double mse_op(Eigen::Vector<double, Eigen::Dynamic> const& y, Eigen::Vector<double, Eigen::Dynamic> const& yhat)
+    double mse_op(Eigen::VectorXd const& y, Eigen::VectorXd const& yhat)
     {
         auto yarr = y.array();
         auto yhat_arr = yhat.array();
@@ -44,7 +44,7 @@ namespace KFM
         grad = (2.0*(yhat.array() - y.array())).matrix();
     }
 
-    void liner_grad(Eigen::Vector<double, Eigen::Dynamic> const& x, Eigen::Vector<double, Eigen::Dynamic>& grad)
+    void liner_grad(Eigen::VectorXd const& x, Eigen::VectorXd& grad)
     {
         grad = Eigen::MatrixXd::Ones(x.rows(), x.cols());
     }

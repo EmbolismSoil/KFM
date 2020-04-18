@@ -26,10 +26,10 @@ public:
     }
 
     virtual double step(Eigen::Matrix<double, Eigen::Dynamic, NFeatures> const& X, 
-                                Eigen::Vector<double, Eigen::Dynamic> const& y, 
+                                Eigen::VectorXd const& y, 
                                 Eigen::Matrix<double, Eigen::Dynamic, NDim> const& XV,
                                 Eigen::Matrix<double, NFeatures, NDim> const& V,
-                                Eigen::Vector<double, Eigen::Dynamic> const& yhat, 
+                                Eigen::VectorXd const& yhat, 
                                 Eigen::Matrix<double, NFeatures, NDim>& dV, 
                                 Eigen::Matrix<double, 1, NFeatures>& dW, double& db)
     {

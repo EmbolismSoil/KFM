@@ -118,7 +118,7 @@ public:
         return 0;
     }
 
-    int predict(Eigen::Matrix<double, Eigen::Dynamic, NFeatures> const& X, Eigen::Vector<double, Eigen::Dynamic>& result) const
+    int predict(Eigen::Matrix<double, Eigen::Dynamic, NFeatures> const& X, Eigen::VectorXd& result) const
     {
         Eigen::Matrix<double, Eigen::Dynamic, NDim> XV;
         return _infer(X, result, XV);
@@ -162,7 +162,7 @@ public:
 
 private:
 
-    int _infer(Eigen::Matrix<double, Eigen::Dynamic, NFeatures> const& X, Eigen::Vector<double, Eigen::Dynamic>& result, Eigen::Matrix<double, Eigen::Dynamic, NDim>& XV) const
+    int _infer(Eigen::Matrix<double, Eigen::Dynamic, NFeatures> const& X, Eigen::VectorXd& result, Eigen::Matrix<double, Eigen::Dynamic, NDim>& XV) const
     {
         XV = X*_V;
         auto b = Eigen::square(XV.array()).matrix();
