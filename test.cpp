@@ -23,8 +23,8 @@ int main(int argc, const char* argv[])
     auto y = m.block(0, 0, m.rows(), 1);
     auto X = m.block(0, 1, m.rows(), m.cols()-1);
 
-    KFM::FMModel<13, 64, KFM::SGDLearner<13, 64>> fm(KFM::FMModel<13, 64, KFM::SGDLearner<13, 64>>::LINER, 0.0001);
-    fm.randomInit();
+    KFM::FMModel<KFM::SGDLearner<Eigen::Dynamic, Eigen::Dynamic>> fm(KFM::FMModel<KFM::SGDLearner<Eigen::Dynamic, Eigen::Dynamic>>::LINER, 0.0001);
+    fm.randomInit(13, 64);
 
     std::cout << "X.rows() = " << X.rows() << "\nX.cols() = " << X.cols() << std::endl;
     std::cout << "FM:\n" << fm.toString() << std::endl;
@@ -44,7 +44,7 @@ int main(int argc, const char* argv[])
     ofs << "X:\n" << X << "y:\n" << y.transpose() << "\nyhat:\n" << yhat.transpose();
     fm.saveModel(argv[3]);
 
-    auto fm1 = KFM::FMModel<13, 64, KFM::SGDLearner<13, 64>>::loadModel(argv[3]);
+    auto fm1 = KFM::FMModel<KFM::SGDLearner<Eigen::Dynamic, Eigen::Dynamic>>::loadModel(argv[3]);
 
     yhat = Eigen::MatrixXd::Zero(yhat.rows(), yhat.cols());
     fm1->predict(X, yhat);

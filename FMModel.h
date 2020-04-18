@@ -14,7 +14,7 @@
 namespace KFM
 {
 
-template<int NFeatures,int NDim, typename LEARNER>
+template<typename LEARNER>
 class FMModel
 {
 public:
@@ -48,13 +48,14 @@ public:
         double const lr = model.lr();
         auto const output = model.output();
 
-        if (w.rows() != 1 || w.cols() != NFeatures){
-            return nullptr;
-        }
+        fm.randomInit(v.rows(), v.cols());
+        //if (w.rows() != 1 || w.cols() != Eigen::Dynamic){
+            //return nullptr;
+        //}
 
-        if (v.rows() != NFeatures || v.cols() != NDim){
-            return nullptr;
-        }
+        //if (v.rows() != Eigen::Dynamic || v.cols() != Eigen::Dynamic){
+            //return nullptr;
+        //}
 
         if (w.data_size() != w.rows() * w.cols() || v.data_size() != v.rows() * v.cols()){
             return nullptr;
@@ -118,16 +119,16 @@ public:
         return 0;
     }
 
-    int predict(Eigen::Matrix<double, Eigen::Dynamic, NFeatures> const& X, Eigen::VectorXd& result) const
+    int predict(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const& X, Eigen::VectorXd& result) const
     {
-        Eigen::Matrix<double, Eigen::Dynamic, NDim> XV;
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> XV;
         return _infer(X, result, XV);
     }
 
-    int randomInit(void)
+    int randomInit(Eigen::Index const nfeatures, Eigen::Index const ndim)
     {
-        _V = Eigen::MatrixXd::Random(NFeatures, NDim);
-        _W = Eigen::MatrixXd::Random(1, NFeatures);
+        _V = Eigen::MatrixXd::Random(nfeatures, ndim);
+        _W = Eigen::MatrixXd::Random(1, nfeatures);
         _b = Eigen::MatrixXd::Random(1, 1)(0, 0);
     }
 
@@ -138,14 +139,14 @@ public:
         return ss.str();
     } 
 
-    double fit(Eigen::Matrix<double, Eigen::Dynamic, NFeatures> const& X, Eigen::VectorXd const& y)
+    double fit(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const& X, Eigen::VectorXd const& y)
     {
-        Eigen::Matrix<double, Eigen::Dynamic, NDim> XV;
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> XV;
         Eigen::VectorXd yhat;
         _infer(X, yhat, XV);
 
-        Eigen::Matrix<double, NFeatures, NDim> dV;
-        Eigen::Matrix<double, 1, NFeatures> dW;
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> dV;
+        Eigen::Matrix<double, 1, Eigen::Dynamic> dW;
         double db;
         auto loss = _learner->step(X, y, XV, _V, yhat, dV, dW, db);
         _W -= dW;
@@ -162,7 +163,7 @@ public:
 
 private:
 
-    int _infer(Eigen::Matrix<double, Eigen::Dynamic, NFeatures> const& X, Eigen::VectorXd& result, Eigen::Matrix<double, Eigen::Dynamic, NDim>& XV) const
+    int _infer(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const& X, Eigen::VectorXd& result, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& XV) const
     {
         XV = X*_V;
         auto b = Eigen::square(XV.array()).matrix();
@@ -181,8 +182,8 @@ private:
 
     FMModel() = default;
 
-    Eigen::Matrix<double, NFeatures, NDim> _V;
-    Eigen::Matrix<double, 1, NFeatures> _W;
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> _V;
+    Eigen::Matrix<double, 1, Eigen::Dynamic> _W;
 
     double _b;
     OUTPUT_t _output;

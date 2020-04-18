@@ -46,14 +46,14 @@ public:
         Eigen::Matrix<double, 1, Eigen::Dynamic> gt = g_loss_output.transpose();
         dW = ((gt * X).array() / n) * _lr;
         
-        Eigen::Matrix<double, Eigen::Dynamic, NFeatures> mask = g_loss_output.replicate(1, NFeatures);
+        Eigen::Matrix<double, Eigen::Dynamic, NFeatures> mask = g_loss_output.replicate(1, X.cols());
         Eigen::Matrix<double, NFeatures, Eigen::Dynamic> p1 = (X.array() * mask.array()).matrix().transpose();
 
         //Eigen::Matrix<double, Eigen::Dynamic, NFeatures> p2 = (Eigen::square(X.array()) * mask.array()).matrix();
-        Eigen::Array<double, NFeatures, NDim> p2 = Eigen::MatrixXd::Zero(NFeatures, NDim).array();
+        Eigen::Array<double, NFeatures, NDim> p2 = Eigen::MatrixXd::Zero(V.rows(), V.cols()).array();
         for (Eigen::Index i = 0; i < X.rows(); ++i){
             auto row = X.row(i).transpose();
-            auto t = V.array() * row.replicate(1, NDim).array() * gt(0, i);
+            auto t = V.array() * row.replicate(1, V.cols()).array() * gt(0, i);
             p2 = t + p2;
         }
 
