@@ -1,0 +1,25 @@
+
+syntax = "proto2";
+package KFM;
+
+message Mat
+{
+    required uint64 rows = 1;
+    required uint64 cols = 2;
+    repeated double data = 3;
+}
+
+message ModelParameters{
+    required Mat w = 1;
+    required Mat v = 2; 
+    required double b = 3;
+    required double lr = 4;
+    
+    enum OUTPUT
+    {
+        SIGMOID = 0;
+        LINER = 1;
+    }
+
+    required OUTPUT output = 5;
+}
