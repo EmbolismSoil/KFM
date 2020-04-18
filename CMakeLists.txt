@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.5)
+project(KFM)
+
+#SET(CMAKE_CXX_STANDAR 11)
+
+FIND_PACKAGE(Protobuf REQUIRED)
+PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS model.proto)
+
+ADD_EXECUTABLE(test_fm test.cpp ${PROTO_SRCS} ${PROTO_HDRS})
+INCLUDE_DIRECTORIES("/usr/local/include/eigen3" "./" ${CMAKE_CURRENT_BINARY_DIR})
+FIND_LIBRARY(PROTOBUF protobuf HINTS "/usr/local/")
+TARGET_LINK_LIBRARIES(test_fm PUBLIC ${PROTOBUF} pthread)
