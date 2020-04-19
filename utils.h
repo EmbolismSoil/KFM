@@ -6,7 +6,8 @@
 #include "ops.h"
 
 namespace KFM{
-typedef enum{SIGMOID, LINER}OUTPUT_t;
+typedef enum{SIGMOID=0, LINER}OUTPUT_t;
+typedef enum{SGD=0}LEARNER_t;
 struct ModelPrivate
 {
     Eigen::MatrixXd W;

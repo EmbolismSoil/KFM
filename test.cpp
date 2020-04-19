@@ -23,7 +23,7 @@ int main(int argc, const char* argv[])
     auto y = m.block(0, 0, m.rows(), 1);
     auto X = m.block(0, 1, m.rows(), m.cols()-1);
 
-    KFM::FMModel<KFM::SGDLearner> fm(13, 64,KFM::LINER, 0.0001);
+    KFM::FMModel fm(13, 64, KFM::LINER, 0.0001);
     fm.randomInit();
 
     std::cout << "X.rows() = " << X.rows() << "\nX.cols() = " << X.cols() << std::endl;
@@ -44,7 +44,7 @@ int main(int argc, const char* argv[])
     ofs << "X:\n" << X << "y:\n" << y.transpose() << "\nyhat:\n" << yhat.transpose();
     fm.saveModel(argv[3]);
 
-    auto fm1 = KFM::FMModel<KFM::SGDLearner>::loadModel(argv[3]);
+    auto fm1 = KFM::FMModel::loadModel(argv[3]);
 
     yhat = Eigen::MatrixXd::Zero(yhat.rows(), yhat.cols());
     fm1->predict(X, yhat);

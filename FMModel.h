@@ -11,26 +11,24 @@
 #include <fstream>
 #include <memory>
 #include "utils.h"
+#include "Learner.h"
+#include <utility>
 
 namespace KFM
 {
-template<typename LEARNER>
 class FMModel
 {
 public:
 
-    FMModel(Eigen::Index const nfeatures, Eigen::Index const ndim, OUTPUT_t const output, double lr=0.0001):
-        _lr(lr)
+    FMModel(Eigen::Index const nfeatures, Eigen::Index const ndim, OUTPUT_t const output, double lr=0.0001, LEARNER_t learner=SGD):
+        _lr(lr),
+        _leanerType(learner)
     {
-        if (output == SIGMOID){
-            _learner = new LEARNER(logloss_grad, sigmoid_grad, logloss_op);
-        }else{
-            _learner = new LEARNER(mse_grad, liner_grad, mse_op);
-        }
         _paramters.W = Eigen::MatrixXd::Zero(1, nfeatures);
         _paramters.V = Eigen::MatrixXd::Zero(nfeatures, ndim);
         _paramters.b = 0;
         _paramters.output = output;
+        _learner = LearnerFactory::instance().create(learner, output);
     }
 
     static std::shared_ptr<FMModel> loadModel(std::string const& path)
@@ -47,6 +45,8 @@ public:
         auto const b = model.b();
         double const lr = model.lr();
         auto const output = model.output();
+        auto const learner = model.learner();
+        auto const leanerType = static_cast<LEARNER_t>(learner);
 
         std::shared_ptr<FMModel> pfm (new FMModel(v.rows(), v.cols(), static_cast<KFM::OUTPUT_t>(output), lr));
         FMModel& fm = *pfm;
@@ -77,12 +77,8 @@ public:
         fm._paramters.b = b;
         fm._paramters.output = static_cast<OUTPUT_t>(output);
         fm._lr = lr;
-
-        if (fm._paramters.output == SIGMOID){
-            fm._learner = new LEARNER(logloss_grad, sigmoid_grad, logloss_op);
-        }else{
-            fm._learner = new LEARNER(mse_grad, liner_grad, mse_op);
-        }
+        fm._leanerType = leanerType;
+        fm._learner = LearnerFactory::instance().create(leanerType, fm._paramters.output);
 
         return pfm;
     }
@@ -112,6 +108,7 @@ public:
         model.set_b(_paramters.b);
         model.set_lr(_lr);
         model.set_output(static_cast<ModelParameters_OUTPUT>(_paramters.output));
+        model.set_learner(static_cast<ModelParameters_LEARNER>(_leanerType));
         std::ofstream output(path, std::ios::binary);
         if (!model.SerializeToOstream(&output)){
             return -1;
@@ -161,19 +158,16 @@ public:
 
     virtual ~FMModel()
     {
-        delete _learner;
     }
 
 private:
 
-
-
     FMModel() = default;
-
     ModelPrivate _paramters;
-
-    LEARNER* _learner;
     double _lr;
+    LEARNER_t _leanerType;
+    
+    std::shared_ptr<Learner> _learner;
 };
 
 };

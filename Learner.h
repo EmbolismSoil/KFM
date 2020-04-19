@@ -5,16 +5,30 @@
 #include <functional>
 #include <iostream>
 #include "utils.h"
+#include <memory>
+#include "ops.h"
 
 namespace KFM
 {
 
-class SGDLearner
+class Learner
 {
 public:
     typedef std::function<void(Eigen::VectorXd const&, Eigen::VectorXd const&, Eigen::VectorXd&)> loss_grad_type;
     typedef std::function<double(Eigen::VectorXd const&, Eigen::VectorXd const&)> loss_op_type;
     typedef std::function<void(Eigen::VectorXd const&, Eigen::VectorXd&)> output_grad_type;
+
+    virtual double step(Eigen::MatrixXd const& X, 
+                        Eigen::VectorXd const& y, 
+                        ModelPrivate const& paramters,
+                        Eigen::MatrixXd& dV, 
+                        Eigen::MatrixXd& dW, double& db) = 0;
+}; 
+
+
+class SGDLearner : public Learner
+{
+public:
 
     SGDLearner(loss_grad_type const& loss_grad, output_grad_type const& output_grad, loss_op_type const& loss_op):
         _loss_grad(loss_grad),
@@ -28,7 +42,7 @@ public:
                         Eigen::VectorXd const& y, 
                         ModelPrivate const& paramters,
                         Eigen::MatrixXd& dV, 
-                        Eigen::MatrixXd& dW, double& db)
+                        Eigen::MatrixXd& dW, double& db) override
     {
         auto const& V = paramters.V;
         Eigen::VectorXd g_loss;
@@ -67,6 +81,37 @@ private:
     loss_grad_type _loss_grad;
     output_grad_type _output_grad;
     loss_op_type _loss_op;
+};
+
+class LearnerFactory
+{
+public:
+    LearnerFactory& operator=(LearnerFactory const&) = delete;
+    LearnerFactory(LearnerFactory const&) = delete;
+
+    static LearnerFactory& instance()
+    {
+        static LearnerFactory factory;
+        return factory;
+    }
+
+    std::shared_ptr<Learner> create(LEARNER_t learner, OUTPUT_t output)
+    {
+        if (learner == SGD){
+            if (output == LINER){
+                return std::make_shared<SGDLearner>(mse_grad, liner_grad, mse_op);
+            }else if (output == SIGMOID){
+                return std::make_shared<SGDLearner>(logloss_grad, sigmoid_grad, logloss_op);
+            }else{
+                return nullptr;
+            }
+        }else{
+            return nullptr;
+        }
+    }
+
+private:
+    LearnerFactory() {};
 };
 
 }
