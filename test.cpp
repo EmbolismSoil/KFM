@@ -23,8 +23,8 @@ int main(int argc, const char* argv[])
     auto y = m.block(0, 0, m.rows(), 1);
     auto X = m.block(0, 1, m.rows(), m.cols()-1);
 
-    KFM::FMModel<KFM::SGDLearner> fm(KFM::FMModel<KFM::SGDLearner>::LINER, 0.0001);
-    fm.randomInit(13, 64);
+    KFM::FMModel<KFM::SGDLearner> fm(13, 64,KFM::LINER, 0.0001);
+    fm.randomInit();
 
     std::cout << "X.rows() = " << X.rows() << "\nX.cols() = " << X.cols() << std::endl;
     std::cout << "FM:\n" << fm.toString() << std::endl;

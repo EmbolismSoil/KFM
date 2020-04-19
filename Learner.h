@@ -4,6 +4,7 @@
 #include <Eigen/Eigen>
 #include <functional>
 #include <iostream>
+#include "utils.h"
 
 namespace KFM
 {
@@ -25,16 +26,18 @@ public:
 
     virtual double step(Eigen::MatrixXd const& X, 
                         Eigen::VectorXd const& y, 
-                        Eigen::MatrixXd const& XV,
-                        Eigen::MatrixXd const& V,
-                        Eigen::VectorXd const& yhat, 
+                        ModelPrivate const& paramters,
                         Eigen::MatrixXd& dV, 
                         Eigen::MatrixXd& dW, double& db)
     {
-        
+        auto const& V = paramters.V;
         Eigen::VectorXd g_loss;
         Eigen::VectorXd g_output;
         auto n = static_cast<double>(X.rows());
+
+        Eigen::VectorXd yhat;
+        Eigen::MatrixXd XV;
+        _fm_infer(paramters, X, yhat, XV);
         
         _loss_grad(y, yhat, g_loss);
         _output_grad(yhat, g_output);
