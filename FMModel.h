@@ -25,9 +25,9 @@ public:
         _lr(lr)
     {
         if (output == SIGMOID){
-            _learner = new LEARNER(logloss_grad, sigmoid_grad, logloss_op, lr);
+            _learner = new LEARNER(logloss_grad, sigmoid_grad, logloss_op);
         }else{
-            _learner = new LEARNER(mse_grad, liner_grad, mse_op, lr);
+            _learner = new LEARNER(mse_grad, liner_grad, mse_op);
         }
     }
 
@@ -78,9 +78,9 @@ public:
         fm._lr = lr;
 
         if (fm._output == SIGMOID){
-            fm._learner = new LEARNER(logloss_grad, sigmoid_grad, logloss_op, lr);
+            fm._learner = new LEARNER(logloss_grad, sigmoid_grad, logloss_op);
         }else{
-            fm._learner = new LEARNER(mse_grad, liner_grad, mse_op, lr);
+            fm._learner = new LEARNER(mse_grad, liner_grad, mse_op);
         }
 
         return pfm;
@@ -149,9 +149,9 @@ public:
         Eigen::MatrixXd dW;
         double db;
         double loss = _learner->step(X, y, XV, _V, yhat, dV, dW, db);
-        _W -= dW;
-        _V -= dV;
-        _b -= db;
+        _W -= dW * _lr;
+        _V -= dV * _lr;
+        _b -= db * _lr;
 
         return loss;
     }
