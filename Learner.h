@@ -8,7 +8,6 @@
 namespace KFM
 {
 
-template<int NFeatures, int NDim>
 class SGDLearner
 {
 public:
@@ -25,13 +24,13 @@ public:
 
     }
 
-    virtual double step(Eigen::Matrix<double, Eigen::Dynamic, NFeatures> const& X, 
+    virtual double step(Eigen::MatrixXd const& X, 
                                 Eigen::VectorXd const& y, 
-                                Eigen::Matrix<double, Eigen::Dynamic, NDim> const& XV,
-                                Eigen::Matrix<double, NFeatures, NDim> const& V,
+                                Eigen::MatrixXd const& XV,
+                                Eigen::MatrixXd const& V,
                                 Eigen::VectorXd const& yhat, 
-                                Eigen::Matrix<double, NFeatures, NDim>& dV, 
-                                Eigen::Matrix<double, 1, NFeatures>& dW, double& db)
+                                Eigen::MatrixXd& dV, 
+                                Eigen::MatrixXd& dW, double& db)
     {
         
         Eigen::VectorXd g_loss;
@@ -46,11 +45,11 @@ public:
         Eigen::Matrix<double, 1, Eigen::Dynamic> gt = g_loss_output.transpose();
         dW = ((gt * X).array() / n) * _lr;
         
-        Eigen::Matrix<double, Eigen::Dynamic, NFeatures> mask = g_loss_output.replicate(1, X.cols());
-        Eigen::Matrix<double, NFeatures, Eigen::Dynamic> p1 = (X.array() * mask.array()).matrix().transpose();
+        Eigen::MatrixXd mask = g_loss_output.replicate(1, X.cols());
+        Eigen::MatrixXd p1 = (X.array() * mask.array()).matrix().transpose();
 
-        //Eigen::Matrix<double, Eigen::Dynamic, NFeatures> p2 = (Eigen::square(X.array()) * mask.array()).matrix();
-        Eigen::Array<double, NFeatures, NDim> p2 = Eigen::MatrixXd::Zero(V.rows(), V.cols()).array();
+        //Eigen::MatrixXd p2 = (Eigen::square(X.array()) * mask.array()).matrix();
+        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic> p2 = Eigen::MatrixXd::Zero(V.rows(), V.cols()).array();
         for (Eigen::Index i = 0; i < X.rows(); ++i){
             auto row = X.row(i).transpose();
             auto t = V.array() * row.replicate(1, V.cols()).array() * gt(0, i);

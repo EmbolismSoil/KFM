@@ -119,9 +119,9 @@ public:
         return 0;
     }
 
-    int predict(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const& X, Eigen::VectorXd& result) const
+    int predict(Eigen::MatrixXd const& X, Eigen::VectorXd& result) const
     {
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> XV;
+        Eigen::MatrixXd XV;
         return _infer(X, result, XV);
     }
 
@@ -139,16 +139,16 @@ public:
         return ss.str();
     } 
 
-    double fit(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const& X, Eigen::VectorXd const& y)
+    double fit(Eigen::MatrixXd const& X, Eigen::VectorXd const& y)
     {
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> XV;
+        Eigen::MatrixXd XV;
         Eigen::VectorXd yhat;
         _infer(X, yhat, XV);
 
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> dV;
-        Eigen::Matrix<double, 1, Eigen::Dynamic> dW;
+        Eigen::MatrixXd dV;
+        Eigen::MatrixXd dW;
         double db;
-        auto loss = _learner->step(X, y, XV, _V, yhat, dV, dW, db);
+        double loss = _learner->step(X, y, XV, _V, yhat, dV, dW, db);
         _W -= dW;
         _V -= dV;
         _b -= db;
@@ -163,7 +163,7 @@ public:
 
 private:
 
-    int _infer(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const& X, Eigen::VectorXd& result, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& XV) const
+    int _infer(Eigen::MatrixXd const& X, Eigen::VectorXd& result, Eigen::MatrixXd& XV) const
     {
         XV = X*_V;
         auto b = Eigen::square(XV.array()).matrix();
@@ -182,8 +182,8 @@ private:
 
     FMModel() = default;
 
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> _V;
-    Eigen::Matrix<double, 1, Eigen::Dynamic> _W;
+    Eigen::MatrixXd _V;
+    Eigen::MatrixXd _W;
 
     double _b;
     OUTPUT_t _output;
