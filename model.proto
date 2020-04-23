@@ -21,10 +21,5 @@ message ModelParameters{
         LINER = 1;
     }
 
-    enum LEARNER{
-        SGD=0;
-    }
-
     required OUTPUT output = 5;
-    required LEARNER learner = 6;
 }

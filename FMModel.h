@@ -20,15 +20,12 @@ class FMModel
 {
 public:
 
-    FMModel(Eigen::Index const nfeatures, Eigen::Index const ndim, OUTPUT_t const output, double lr=0.0001, LEARNER_t learner=SGD):
-        _lr(lr),
-        _leanerType(learner)
+    FMModel(Eigen::Index const nfeatures, Eigen::Index const ndim, OUTPUT_t const output)
     {
         _paramters.W = Eigen::MatrixXd::Zero(1, nfeatures);
         _paramters.V = Eigen::MatrixXd::Zero(nfeatures, ndim);
         _paramters.b = 0;
-        _paramters.output = output;
-        _learner = LearnerFactory::instance().create(learner, output);
+        _output = output;
     }
 
     static std::shared_ptr<FMModel> loadModel(std::string const& path)
@@ -45,10 +42,8 @@ public:
         auto const b = model.b();
         double const lr = model.lr();
         auto const output = model.output();
-        auto const learner = model.learner();
-        auto const leanerType = static_cast<LEARNER_t>(learner);
 
-        std::shared_ptr<FMModel> pfm (new FMModel(v.rows(), v.cols(), static_cast<KFM::OUTPUT_t>(output), lr));
+        std::shared_ptr<FMModel> pfm (new FMModel(v.rows(), v.cols(), static_cast<KFM::OUTPUT_t>(output)));
         FMModel& fm = *pfm;
         //if (w.rows() != 1 || w.cols() != Eigen::Dynamic){
             //return nullptr;
@@ -75,10 +70,8 @@ public:
         }
 
         fm._paramters.b = b;
-        fm._paramters.output = static_cast<OUTPUT_t>(output);
+        fm._output = static_cast<OUTPUT_t>(output);
         fm._lr = lr;
-        fm._leanerType = leanerType;
-        fm._learner = LearnerFactory::instance().create(leanerType, fm._paramters.output);
 
         return pfm;
     }
@@ -107,8 +100,7 @@ public:
 
         model.set_b(_paramters.b);
         model.set_lr(_lr);
-        model.set_output(static_cast<ModelParameters_OUTPUT>(_paramters.output));
-        model.set_learner(static_cast<ModelParameters_LEARNER>(_leanerType));
+        model.set_output(static_cast<ModelParameters_OUTPUT>(_output));
         std::ofstream output(path, std::ios::binary);
         if (!model.SerializeToOstream(&output)){
             return -1;
@@ -120,7 +112,7 @@ public:
     int predict(Eigen::MatrixXd const& X, Eigen::VectorXd& result) const
     {
         Eigen::MatrixXd XV;
-        return _fm_infer(_paramters, X, result, XV);
+        return _fm_infer(_paramters, X, result, XV, _output);
     }
 
     int randomInit()
@@ -139,35 +131,30 @@ public:
         return ss.str();
     } 
 
-    double fit(Eigen::MatrixXd const& X, Eigen::VectorXd const& y)
-    {
-        Eigen::MatrixXd XV;
-        Eigen::VectorXd yhat;
-        _fm_infer(_paramters, X, yhat, XV);
-
-        Eigen::MatrixXd dV;
-        Eigen::MatrixXd dW;
-        double db;
-        double loss = _learner->step(X, y, _paramters, dV, dW, db);
-        _paramters.W -= dW * _lr;
-        _paramters.V -= dV * _lr;
-        _paramters.b -= db * _lr;
-
-        return loss;
-    }
-
     virtual ~FMModel()
     {
+    }
+
+    void getParameters(Eigen::MatrixXd& W, Eigen::MatrixXd& V, double& b)
+    {
+        W = _paramters.W;
+        V = _paramters.V;
+        b = _paramters.b;
+    }
+
+    void setParameters(Eigen::MatrixXd const& W, Eigen::MatrixXd const& V, double const b)
+    {
+        _paramters.W = W;
+        _paramters.V = V;
+        _paramters.b = b;
     }
 
 private:
 
     FMModel() = default;
     ModelPrivate _paramters;
+    OUTPUT_t _output;
     double _lr;
-    LEARNER_t _leanerType;
-    
-    std::shared_ptr<Learner> _learner;
 };
 
 };

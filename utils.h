@@ -13,15 +13,13 @@ struct ModelPrivate
     Eigen::MatrixXd W;
     Eigen::MatrixXd V;
     double b;
-    OUTPUT_t output;
 }; 
 
-static int _fm_infer(ModelPrivate const& paramters, Eigen::MatrixXd const& X, Eigen::VectorXd& result, Eigen::MatrixXd& XV) 
+static int _fm_infer(ModelPrivate const& paramters, Eigen::MatrixXd const& X, Eigen::VectorXd& result, Eigen::MatrixXd& XV, OUTPUT_t output) 
 {
     auto const& V = paramters.V;
     auto const& W = paramters.W;
     auto const _b = paramters.b;
-    auto const output = paramters.output;
 
     XV = X*V;
     auto b = Eigen::square(XV.array()).matrix();
