@@ -58,7 +58,6 @@ public:
                 auto fut = 
                 _pool.post([batch, rows, j, &ps, epoch, this](){
                     for (auto i = 0; i < epoch; ++i){
-                        std::cout << "epoch = " << i << std::endl;
                         std::map<std::string, Eigen::MatrixXd> parameters;
                         int step = 0;
                         int ret = ps.get_parameters(step, parameters);
@@ -93,7 +92,6 @@ public:
                             double db;
 
                             auto loss = this->step(X, y, p, dV, dW, db);
-                            std::cout << "after " << step << ", loss = " << loss << std::endl;
                             Eigen::MatrixXd _db = Eigen::MatrixXd::Zero(1, 1);
                             _db(0, 0) = db;
                             std::map<std::string, Eigen::MatrixXd> dParameters = {
