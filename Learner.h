@@ -58,6 +58,7 @@ public:
                 auto fut = 
                 _pool.post([batch, rows, j, &ps, epoch, this](){
                     for (auto i = 0; i < epoch; ++i){
+                        std::cout << "epoch = " << i << std::endl;
                         std::map<std::string, Eigen::MatrixXd> parameters;
                         int step = 0;
                         int ret = ps.get_parameters(step, parameters);
@@ -82,6 +83,7 @@ public:
                                 return -1;
                             }
 
+                            ps.get_parameters(step, parameters);
                             ModelPrivate p;
                             p.W = parameters["W"];
                             p.V = parameters["V"];
@@ -106,7 +108,6 @@ public:
                                 step += 1;
                             }
                             
-                            ps.get_parameters(step, parameters);
                         }
                     }
                     return 0;
