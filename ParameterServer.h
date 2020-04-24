@@ -30,7 +30,7 @@ public:
 class MultiThreadPS: public ParaemterServer
 {
 public:
-    MultiThreadPS(Eigen::MatrixXd const& X, Eigen::MatrixXd const& y, std::map<std::string, Eigen::MatrixXd> const& parameters, int const max_step=10):
+    MultiThreadPS(Eigen::MatrixXd const& X, Eigen::MatrixXd const& y, std::map<std::string, Eigen::MatrixXd> const& parameters, int const max_step=0):
         _parameters(parameters),
         _max_step(max_step)
     {

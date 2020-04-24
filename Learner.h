@@ -10,6 +10,7 @@
 #include "ParameterServer.h"
 #include <thread>
 #include <algorithm>
+#include "ThreadPool.hpp"
 
 namespace KFM
 {
@@ -21,7 +22,7 @@ public:
     typedef std::function<double(Eigen::VectorXd const&, Eigen::VectorXd const&)> loss_op_type;
     typedef std::function<void(Eigen::VectorXd const&, Eigen::VectorXd&)> output_grad_type;
     typedef std::function<void(ModelPrivate const&, Eigen::MatrixXd const&, Eigen::VectorXd&, Eigen::MatrixXd&)> infer_op_type;
-    virtual void fit(ParaemterServer& ps, int batch_size, int epoch=5, int nthreads=-1) = 0;
+    virtual void fit(ParaemterServer& ps, int batch_size, int epoch=5) = 0;
     
 }; 
 
@@ -30,21 +31,21 @@ class SGDLearner : public Learner
 {
 public:
 
-    SGDLearner(loss_grad_type const& loss_grad, output_grad_type const& output_grad, loss_op_type const& loss_op, infer_op_type const& infer_op, double lr=0.001, double lambda=0.001):
+    SGDLearner(loss_grad_type const& loss_grad, output_grad_type const& output_grad, loss_op_type const& loss_op, infer_op_type const& infer_op, double lr=0.001, double lambda=0.001, int nthreads=-1):
         _loss_grad(loss_grad),
         _output_grad(output_grad),
         _loss_op(loss_op),
         _infer_op(infer_op),
-        _lr(lr)
+        _lr(lr),
+        _lambda(lambda),
+        _nthreads(nthreads > 0 ? nthreads : std::thread::hardware_concurrency()),
+        _pool(_nthreads)
     {
-
+        _pool.init();
     }
     
-    virtual void fit(ParaemterServer& ps, int batch_size, int epoch=5, int nthreads=-1) override
+    virtual void fit(ParaemterServer& ps, int batch_size, int epoch=5) override
     {
-        if (nthreads < 0){
-            nthreads = std::thread::hardware_concurrency();
-        }
 
         Eigen::Index rows;
         Eigen::Index cols;
@@ -52,77 +53,70 @@ public:
         
         int gstep = 0;
         ps.get_data_shape(gstep, rows, cols);
-
-        for(auto i = 0; i < epoch; ++i)
-        {
-            auto step = ps.step();
-            auto max_step = ps.max_step();
-            std::vector<std::thread> threads;
-            for (auto j = 0; j < nthreads; ++j){
-                threads.emplace_back(std::thread([batch, rows, nthreads, j, &ps, this, max_step](){
-                    std::map<std::string, Eigen::MatrixXd> parameters;
-                    int step = 0;
-                    int ret = ps.get_parameters(step, parameters);
-                    if (ret != 0){
-                        return;
-                    }
-
-                    for (auto k = 0; k < rows/(batch*nthreads); ++k){
-                        Eigen::Index start = nthreads*batch*k + j*batch; 
-                        Eigen::Index end = start + batch;
-                        start = std::min(start, rows);
-                        end = std::min(end, rows);
-                        if (start == end){
-                            return;
-                        }
-
-                        Eigen::MatrixXd X;
-                        Eigen::MatrixXd y;
-                        auto s = k + step;
-                        ret = ps.get_data(X, y, start, end);
+        std::vector<std::future<int>> res;
+            for (auto j = 0; j < _nthreads; ++j){
+                auto fut = 
+                _pool.post([batch, rows, j, &ps, epoch, this](){
+                    for (auto i = 0; i < epoch; ++i){
+                        std::map<std::string, Eigen::MatrixXd> parameters;
+                        int step = 0;
+                        int ret = ps.get_parameters(step, parameters);
                         if (ret != 0){
-                            continue;
+                            return ret;
                         }
 
-                        ModelPrivate p;
-                        p.W = parameters["W"];
-                        p.V = parameters["V"];
-                        p.b = parameters["b"](0, 0);
-                        Eigen::MatrixXd dW;
-                        Eigen::MatrixXd dV;
-                        double db;
+                        for (auto k = 0; k < rows/(batch*_nthreads); ++k){
+                            Eigen::Index start = _nthreads*batch*k + j*batch; 
+                            Eigen::Index end = start + batch;
+                            start = std::min(start, rows);
+                            end = std::min(end, rows);
+                            if (start == end){
+                                return -1;
+                            }
 
-                        auto loss = this->step(X, y, p, dV, dW, db);
-                        std::cout << "loss = " << loss << std::endl;
-                        Eigen::MatrixXd _db = Eigen::MatrixXd::Zero(1, 1);
-                        _db(0, 0) = db;
-                        std::map<std::string, Eigen::MatrixXd> dParameters = {
-                            {"W", dW}, {"V", dV}, {"b", _db}
-                        };
-                        parameters["W"] += dW;
-                        parameters["V"] += dV;
-                        parameters["b"] += _db;
+                            Eigen::MatrixXd X;
+                            Eigen::MatrixXd y;
+                            auto s = k + step;
+                            ret = ps.get_data(X, y, start, end);
+                            if (ret != 0){
+                                return -1;
+                            }
 
-                        ret = ps.update_parameters(s, dParameters);
-                        step += 1;
-                        if (ret != 0){
-                            continue;
-                        }
+                            ModelPrivate p;
+                            p.W = parameters["W"];
+                            p.V = parameters["V"];
+                            p.b = parameters["b"](0, 0);
+                            Eigen::MatrixXd dW;
+                            Eigen::MatrixXd dV;
+                            double db;
 
-                        if (s - step >= max_step){
+                            auto loss = this->step(X, y, p, dV, dW, db);
+                            std::cout << "after " << step << ", loss = " << loss << std::endl;
+                            Eigen::MatrixXd _db = Eigen::MatrixXd::Zero(1, 1);
+                            _db(0, 0) = db;
+                            std::map<std::string, Eigen::MatrixXd> dParameters = {
+                                {"W", dW}, {"V", dV}, {"b", _db}
+                            };
+                            parameters["W"] += dW;
+                            parameters["V"] += dV;
+                            parameters["b"] += _db;
+
+                            ret = ps.update_parameters(s, dParameters);
+                            if (ret == 0){
+                                step += 1;
+                            }
+                            
                             ps.get_parameters(step, parameters);
                         }
                     }
-                    
-                }));
+                    return 0;
+                });
+                res.emplace_back(std::move(fut));
             }
-
-            for (auto& t: threads){
-                t.join();
+            
+            for (auto& r: res){
+                r.get();
             }
-
-            std::cout << "epoch " << i << std::endl;
-        }
     }
 
     virtual double step(Eigen::MatrixXd const& X, 
@@ -175,6 +169,8 @@ private:
     infer_op_type _infer_op;
     double _lr;
     double _lambda;
+    int _nthreads;
+    KLib::ThreadPool _pool;
 };
 
 class LearnerFactory
@@ -188,15 +184,15 @@ public:
         static LearnerFactory factory;
         return factory;
     }
-
-    std::shared_ptr<Learner> create(LEARNER_t learner, OUTPUT_t output, double lr=0.001, double lambda=0.001)
+    
+    std::shared_ptr<Learner> create(LEARNER_t learner, OUTPUT_t output, double lr=0.001, double lambda=0.001, int nthreads=-1)
     {
         auto infer_op = std::bind(_fm_infer, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, output);
         if (learner == SGD){
             if (output == LINER){
-                return std::make_shared<SGDLearner>(mse_grad, liner_grad, mse_op, infer_op, lr, lambda);
+                return std::make_shared<SGDLearner>(mse_grad, liner_grad, mse_op, infer_op, lr, lambda, nthreads);
             }else if (output == SIGMOID){
-                return std::make_shared<SGDLearner>(logloss_grad, sigmoid_grad, logloss_op, infer_op, lr, lambda);
+                return std::make_shared<SGDLearner>(logloss_grad, sigmoid_grad, logloss_op, infer_op, lr, lambda, nthreads);
             }else{
                 return nullptr;
             }
