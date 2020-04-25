@@ -19,6 +19,7 @@ public:
     //输入参数node: 当前工作节点的唯一id
     virtual int get_parameters(int& step, std::map<std::string, Eigen::MatrixXd>& parameters) const = 0;
     virtual int update_parameters(int& step, std::map<std::string, Eigen::MatrixXd> const& parameters) = 0;
+    virtual int dc_update_parameter(int& step, std::map<std::string, Eigen::MatrixXd> const& grad, std::map<std::string, Eigen::MatrixXd> const& param) = 0;
     virtual int get_data(Eigen::MatrixXd& X, Eigen::MatrixXd& y, int start, int end) const = 0;
     virtual int get_data_shape(int &step, Eigen::Index& rows, Eigen::Index& cols) const = 0;
     virtual int start() = 0;
@@ -30,8 +31,10 @@ public:
 class MultiThreadPS: public ParaemterServer
 {
 public:
-    MultiThreadPS(Eigen::MatrixXd const& X, Eigen::MatrixXd const& y, std::map<std::string, Eigen::MatrixXd> const& parameters, int const max_step=0):
+    MultiThreadPS(Eigen::MatrixXd const& X, Eigen::MatrixXd const& y, std::map<std::string, Eigen::MatrixXd> const& parameters, double lambda, double lr, int const max_step=0):
         _parameters(parameters),
+        _lambda(lambda),
+        _lr(lr),
         _max_step(max_step)
     {
         _X = X;
@@ -56,8 +59,6 @@ public:
     virtual int update_parameters(int& step, std::map<std::string, Eigen::MatrixXd> const& parameters) override
     {
         WLockGaurd guard(_mtx);
-        _step += 1;
-        step = _step;
         
         if (step < _step - _max_step){
             return -1;
@@ -72,9 +73,42 @@ public:
                 continue;
             }
 
-            _parameters[item.first] += item.second;
+            _parameters[item.first] -= _lr*item.second;
         }
 
+        _step += 1;
+        step = _step;
+        return 0;
+    }
+
+    virtual int dc_update_parameter(int& step, std::map<std::string, Eigen::MatrixXd> const& grad, std::map<std::string, Eigen::MatrixXd> const& param) override
+    {
+        WLockGaurd guard(_mtx);
+        
+        if (step < _step - _max_step || grad.size() != param.size()){
+            return -1;
+        }
+
+        for (auto const& p: param){
+            auto ppos = _parameters.end();
+            auto gpos = grad.cend();
+            if ((ppos = _parameters.find(p.first)) == _parameters.end() || 
+                                    (gpos = grad.find(p.first)) == grad.cend())
+            {
+                return -1;
+            }
+
+            auto const& w_t = p.second;
+            auto const& w_tau = ppos->second;
+            auto const& g_t = gpos->second;
+
+            Eigen::MatrixXd dW = g_t + (_lambda*g_t.array()*g_t.array()*(w_tau - w_t).array()).matrix();
+            ppos->second = w_tau - _lr*dW;
+
+        }
+        
+        _step += 1;
+        step = _step;
         return 0;
     }
 
@@ -127,6 +161,8 @@ private:
     Eigen::MatrixXd _X;
     Eigen::MatrixXd _y;
     std::map<std::string, Eigen::MatrixXd> _parameters;
+    double _lambda;
+    double _lr;
     int _max_step;
 };
 

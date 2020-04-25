@@ -40,10 +40,10 @@ int main(int argc, const char* argv[])
         {"W", W}, {"V", V}, {"b", b}
     };
 
-    KFM::MultiThreadPS ps(X, y, parameters, 10); 
-    auto learner = KFM::LearnerFactory::instance().create(KFM::SGD, KFM::LINER, 0.00005, 0.001, n);
+    KFM::MultiThreadPS ps(X, y, parameters, 0.1, 0.00002, 10); 
+    auto learner = KFM::LearnerFactory::instance().create(KFM::SGD, KFM::LINER, 0.001, n);
     auto now = std::chrono::high_resolution_clock::now();
-    learner->fit(ps, 100, 25);
+    learner->fit(ps, 100, 100);
     auto delta = std::chrono::high_resolution_clock::now() - now;
     std::cout << "fit cost = " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count()/1000 << "s" << std::endl;
     //学习到的参数设置到模型中
