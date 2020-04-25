@@ -86,7 +86,11 @@ get_python_inc(),
 '-isystem',
 'cpp/ycm/benchmarks/benchmark/include',
 '-isystem',
-'/usr/local/include/eigen3/'
+'/usr/local/include/eigen3/',
+'-isystem',
+'/usr/include/python3.6/',
+'-isystem',
+'../../.local/lib/python3.6/site-packages/numpy/core/include/'
 ]
 
 # Clang automatically sets the '-std=' flag to 'c++14' for MSVC 2015 or later,
