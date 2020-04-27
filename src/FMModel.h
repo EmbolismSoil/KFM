@@ -40,7 +40,6 @@ public:
         auto const& w = model.w();
         auto const& v = model.v();
         auto const b = model.b();
-        double const lr = model.lr();
         auto const output = model.output();
 
         std::shared_ptr<FMModel> pfm (new FMModel(v.rows(), v.cols(), static_cast<KFM::OUTPUT_t>(output)));
