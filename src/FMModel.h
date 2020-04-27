@@ -71,7 +71,6 @@ public:
 
         fm._paramters.b = b;
         fm._output = static_cast<OUTPUT_t>(output);
-        fm._lr = lr;
 
         return pfm;
     }
@@ -99,7 +98,6 @@ public:
         v->set_rows(static_cast<uint64_t>(_paramters.V.rows()));
 
         model.set_b(_paramters.b);
-        model.set_lr(_lr);
         model.set_output(static_cast<ModelParameters_OUTPUT>(_output));
         std::ofstream output(path, std::ios::binary);
         if (!model.SerializeToOstream(&output)){
@@ -154,7 +152,6 @@ private:
     FMModel() = default;
     ModelPrivate _paramters;
     OUTPUT_t _output;
-    double _lr;
 };
 
 };

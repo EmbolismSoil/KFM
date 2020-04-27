@@ -90,7 +90,6 @@ public:
                             double db;
 
                             auto loss = this->step(X, y, p, dV, dW, db);
-                            std::cout << "after " << step  << " steps, loss = " << loss << std::endl;
                             Eigen::MatrixXd _db = Eigen::MatrixXd::Zero(1, 1);
                             _db(0, 0) = db;
                             std::map<std::string, Eigen::MatrixXd> dParameters = {

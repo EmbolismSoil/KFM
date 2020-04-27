@@ -90,7 +90,11 @@ get_python_inc(),
 '-isystem',
 '/usr/include/python3.6/',
 '-isystem',
-'../../.local/lib/python3.6/site-packages/numpy/core/include/'
+'../../.local/lib/python3.6/site-packages/numpy/core/include/',
+'-isystem',
+'../../.local/lib/python3.6/site-packages/pybind11/include/',
+'-isystem',
+'src/'
 ]
 
 # Clang automatically sets the '-std=' flag to 'c++14' for MSVC 2015 or later,

@@ -13,7 +13,6 @@ message ModelParameters{
     required Mat w = 1;
     required Mat v = 2; 
     required double b = 3;
-    required double lr = 4;
     
     enum OUTPUT
     {
@@ -21,5 +20,5 @@ message ModelParameters{
         LINER = 1;
     }
 
-    required OUTPUT output = 5;
+    required OUTPUT output = 4;
 }
