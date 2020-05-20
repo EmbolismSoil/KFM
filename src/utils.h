@@ -57,5 +57,11 @@ void load_csv (const std::string & path, M& m)
     m = Eigen::Map<const Eigen::Matrix<typename M::Scalar, M::RowsAtCompileTime, M::ColsAtCompileTime, Eigen::RowMajor>>(values.data(), rows, values.size()/rows);
 }    
 
+template<typename M>
+void vector2Matrix(M& m, std::vector<typename M::Scalar> const& vec, Eigen::Index rows)
+{
+    m = Eigen::Map<const Eigen::Matrix<typename M::Scalar, M::RowsAtCompileTime, M::ColsAtCompileTime, Eigen::RowMajor>>(vec.data(), rows, vec.size()/rows);
+}
+
 }
 #endif

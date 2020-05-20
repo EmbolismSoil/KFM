@@ -4,9 +4,9 @@
 #include <pybind11/numpy.h>
 
 static
-KFM::FMRegressor create(Eigen::Index const ndim=64, double lr=0.0001, double gamma=0.01, double lambda=0.1, int njobs=-1, int max_step=-1)
+KFM::FMRegressor create(std::string const& path)
 {
-    return KFM::FMRegressor(ndim, lr, gamma, lambda, njobs, max_step);
+
 }
 
 namespace py=pybind11;
@@ -15,9 +15,13 @@ PYBIND11_MODULE(KFM, m)
 {
     m.doc() = "FM Model";
     py::class_<KFM::FMRegressor>(m, "FMRegressor")
-        .def(py::init<Eigen::Index, double, double, double, int, int>(), py::arg("ndim")=Eigen::Index(64), py::arg("lr")=double(0.0001), py::arg("gamma")=double(0.01), py::arg("lambda")=double(0.1), py::arg("njobs")=1, py::arg("max_step")=int(1))
+        .def(py::init<Eigen::Index, double, double, double, int, int>(), py::arg("ndim")=Eigen::Index(64), py::arg("lr")=double(0.0001), py::arg("gamma")=double(0.01), py::arg("eta")=double(0.1), py::arg("njobs")=1, py::arg("max_step")=int(1))
         .def("fit", &KFM::FMRegressor::fit, py::arg("X"), py::arg("y"), py::arg("batch_size")=int(100), py::arg("epoch")=int(5))
         .def("predict", &KFM::FMRegressor::predict)
         .def("save", &KFM::FMRegressor::save)
+        .def("tostring", &KFM::FMRegressor::tostring)
+        .def("W", &KFM::FMRegressor::W)
+        .def("V", &KFM::FMRegressor::V)
+        .def("b", &KFM::FMRegressor::b)
         .def("load", &KFM::FMRegressor::load);
 }

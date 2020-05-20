@@ -4,7 +4,7 @@ import sys
 
 ret = os.system('make')
 if ret != 0:
-    echo "build protobuf failed"
+    print("build protobuf failed")
     sys.exit(ret)
 
 pybind11 = os.popen('python3 -m pybind11 --includes').read().strip().replace('-I', '').split(' ')

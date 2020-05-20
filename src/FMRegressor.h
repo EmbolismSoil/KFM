@@ -62,6 +62,7 @@ public:
     int load(std::string const& path)
     {
         _model = FMModel::loadModel(path);
+        _fit = true;
     }
 
     //Eigen::VectorXd predict(Eigen::Ref<Eigen::MatrixXd> const X)
@@ -73,6 +74,45 @@ public:
         Eigen::VectorXd y;
         _model->predict(X, y);
         return y;
+    }
+
+    std::string tostring()
+    {
+        std::stringstream ss;
+        Eigen::MatrixXd W;
+        Eigen::MatrixXd V;
+        double b;
+        _model->getParameters(W, V, b);
+
+        ss << "bias: " << b << "\nW:\n" << W << "\nV:\n" << V;
+        return ss.str();
+    }
+
+    Eigen::MatrixXd W() const
+    {
+        Eigen::MatrixXd W;
+        Eigen::MatrixXd V;
+        double b;
+        _model->getParameters(W, V, b);
+        return W;
+    }
+
+    Eigen::MatrixXd V() const
+    {
+        Eigen::MatrixXd W;
+        Eigen::MatrixXd V;
+        double b;
+        _model->getParameters(W, V, b);
+        return V;
+    }
+
+    double b() const
+    {
+        Eigen::MatrixXd W;
+        Eigen::MatrixXd V;
+        double b;
+        _model->getParameters(W, V, b);
+        return b;
     }
 
 private:
